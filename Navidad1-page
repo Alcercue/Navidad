@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Cuenta atrás para Navidad!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #8b0000; /* Fondo rojo de Navidad */
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: #fdf5e6;
+        }
+
+        /* Estilos del modal de carga */
+        #loading-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: #fdf5e6;
+            transition: opacity 0.5s ease;
+        }
+        
+        .spinner {
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-top: 8px solid #fdf5e6;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilo para el contador de carga */
+        #loading-countdown {
+            font-size: 3em;
+            font-weight: bold;
+            color: #ffdab9; /* Salmón claro para el contador */
+            margin-top: 20px;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        /* Contenedor principal, ahora es el "rectángulo ocre" */
+        .main-container {
+            background-color: #fdf5e6; /* Fondo crema para el rectángulo */
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between; /* Distribuye espacio entre canvas y botones */
+            padding: 20px; /* Padding dentro del rectángulo ocre */
+            box-sizing: border-box;
+            position: relative; /* Para posicionamiento de elementos internos si fuera necesario */
+            
+            /* Dimensiones responsivas para el contenedor principal */
+            width: 90vw;
+            max-width: 600px; /* Ancho máximo para pantallas grandes */
+            min-height: 250px; /* Altura mínima para asegurar visibilidad */
+            gap: 15px; /* Espacio entre el canvas y los botones */
+        }
+        
+        canvas {
+            background-color: transparent; /* El fondo lo pone el main-container */
+            border-radius: 0; /* Las esquinas las pone el main-container */
+            box-shadow: none; /* La sombra la pone el main-container */
+            width: 100%; /* El canvas ocupa todo el ancho disponible de su padre */
+            flex-grow: 1; /* Permite que el canvas crezca y ocupe espacio */
+            /* La altura se ajustará dinámicamente en JS, pero aquí aseguramos que ocupe espacio */
+        }
+
+        /* Contenedor de botones principales, ahora dentro del main-container */
+        .button-container {
+            display: flex;
+            flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
+            justify-content: center; /* Centra los botones horizontalmente */
+            gap: 15px; /* Espacio entre los botones */
+            width: 100%; /* Ocupa todo el ancho del main-container */
+            position: relative; /* Asegura que z-index funcione */
+            z-index: 10; /* Asegura que esté por encima de otros elementos */
+        }
+        
+        /* Ajuste para evitar que el botón "Privado" se monte */
+        #countdown-page .button-container {
+            margin-bottom: 80px; /* Espacio adicional para el botón fijo "Privado" */
+        }
+
+        .button-container button {
+            background-color: #006400; /* Fondo verde de Navidad */
+            color: #ffffff; /* Texto blanco */
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .button-container button:hover {
+            background-color: #008000; /* Verde más claro al pasar el ratón */
+            transform: translateY(-2px); /* Efecto de elevación */
+        }
+        .button-container button:active {
+            transform: translateY(0);
+        }
+
+        /* Nuevo contenedor para el botón de desarrolladores, abajo del todo */
+        .dev-button-container {
+            position: fixed; /* Fija el botón en la ventana */
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100; /* Asegura que esté por encima de otros elementos */
+            display: none; /* Oculto por defecto */
+        }
+        
+        .page.active #dev-button-container-child {
+            display: block; /* Muestra el botón solo si la página está activa */
+        }
+
+        .dev-button-container button {
+            background-color: #4a5568; /* Fondo gris para distinguirlo */
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        .dev-button-container button:hover {
+            background-color: #2d3748; /* Gris más oscuro al pasar el ratón */
+            transform: translateY(-2px);
+        }
+        .dev-button-container button:active {
+            transform: translateY(0);
+        }
+
+        /* Estilos para las nuevas páginas */
+        .content-page {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .content-page h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ffdab9; /* Salmón claro */
+        }
+        .content-page p, .content-page ul {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .content-page table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .content-page th, .content-page td {
+            border: 1px solid #fdf5e6;
+            padding: 10px;
+        }
+        .content-page th {
+            background-color: #006400;
+            color: white;
+            font-weight: bold;
+        }
+        .content-page td {
+            text-align: left;
+        }
+
+        #suggestion-box {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #fdf5e6;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'Inter', sans-serif;
+            margin-top: 10px;
+            resize: vertical;
+        }
+        
+        #user-name {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #fdf5e6;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'Inter', sans-serif;
+            margin-top: 20px;
+        }
+        
+        /* Estilos para mostrar las sugerencias */
+        .suggestion-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .suggestion-card h4 {
+            font-weight: bold;
+            color: #ffdab9;
+            margin-bottom: 5px;
+        }
+        .suggestion-card p {
+            font-size: 1em;
+            margin-bottom: 5px;
+        }
+        .suggestion-card small {
+            font-size: 0.8em;
+            color: #ccc;
+        }
+
+
+        /* Estilos del modal */
+        .modal {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fdf5e6;
+            color: #006400;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 80%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .modal-content h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .modal-content button {
+            background-color: #006400;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .modal-content button:hover {
+            background-color: #008000;
+        }
+
+        /* Estilos para el menú hamburguesa */
+        .hamburger-menu {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1100; /* Mayor que el modal de carga */
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 40px;
+            height: 32px;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .hamburger-menu:hover {
+            background-color: rgba(10, 20, 30, 0.5);
+        }
+        .hamburger-menu span {
+            display: block;
+            width: 100%;
+            height: 4px;
+            background-color: #fdf5e6;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        /* Estilos para el velo del menú */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 0; /* Inicialmente oculto */
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); /* Velo oscuro */
+            z-index: 1050; /* Por encima de las páginas, pero debajo del modal de carga */
+            overflow-x: hidden;
+            transition: 0.5s; /* Transición suave */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 60px;
+        }
+
+        .menu-overlay.open {
+            width: 50%; /* Se abre al 50% */
+        }
+
+        .menu-overlay a {
+            padding: 15px 8px;
+            text-decoration: none;
+            font-size: 2em;
+            color: #fdf5e6;
+            display: block;
+            transition: 0.3s;
+            width: 80%;
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        .menu-overlay a:hover {
+            color: #ffdab9;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-overlay .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 45px;
+            font-size: 60px;
+            color: #fdf5e6;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Estilos para los campos de formulario en Reservas */
+        .reservas-form-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .reservas-form-group label {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+            color: #fdf5e6;
+        }
+
+        .reservas-form-group input[type="text"],
+        .reservas-form-group input[type="date"],
+        .reservas-form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #fdf5e6;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'Inter', sans-serif;
+            box-sizing: border-box; /* Asegura que el padding no aumente el ancho */
+        }
+
+        /* Estilos para el contenedor de iconos de flash de Navidad */
+        #christmas-flash-icon-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px; /* Tamaño del contenedor */
+            height: 200px; /* Tamaño del contenedor */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10; /* Asegura que esté por encima del canvas */
+            opacity: 0; /* Inicialmente transparente */
+            transition: opacity 0.5s ease-in-out; /* Transición suave para el efecto flash */
+        }
+
+        /* Asegura que la imagen dentro del contenedor ocupe el espacio */
+        #christmas-flash-icon-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Para que la imagen se ajuste sin distorsionarse */
+            border-radius: 8px; /* Opcional: para redondear las esquinas de las imágenes */
+        }
+
+        /* Estilos para el iframe del video de YouTube */
+        .video-responsive {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            background: #000;
+            border-radius: 10px; /* Añadido para mantener el estilo redondeado */
+        }
+
+        .video-responsive iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- Modal de carga -->
+    <div id="loading-modal">
+        <div class="spinner"></div>
+        <h2 class="text-2xl">Cargando la Navidad...</h2>
+        <!-- Nuevo elemento para el contador -->
+        <div id="loading-countdown" class="text-6xl font-bold mt-4"></div>
+    </div>
+
+    <!-- Menú hamburguesa -->
+    <div class="hamburger-menu" id="hamburger-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Velo del menú -->
+    <div class="menu-overlay" id="menu-overlay">
+        <a href="javascript:void(0)" class="close-btn" id="close-menu-btn">&times;</a>
+        <a href="#" id="menu-btn-reservas">Reservas</a>
+        <a href="#" id="menu-btn-programa-2024">Programa 2024</a>
+        <a href="#" id="menu-btn-mensaje-chef">Mensaje del Chef</a>
+        <a href="#" id="menu-btn-mensaje-anfitriones">Mensaje de los anfitriones</a>
+    </div>
+
+    <!-- Página principal con el contador -->
+    <div id="countdown-page" class="page active">
+        <div class="main-container">
+            <canvas id="miCanvas"></canvas>
+            <!-- Contenedor para iconos SVG de flash de Navidad -->
+            <div id="christmas-flash-icon-container"></div>
+            <!-- Contenedor de botones principales, ahora dentro del main-container -->
+            <div class="button-container">
+                <button id="btn-anterior">Anterior edición</button>
+                <button id="btn-menu">Menú</button>
+                <button id="btn-Sugerencias">Sugerencias</button>
+            </div>
+        </div>
+        <!-- Botón de desarrolladores en su propio contenedor, abajo del todo -->
+        <div class="dev-button-container" id="dev-button-container-child">
+            <button id="btn-dev-page">Privado</button>
+        </div>
+    </div>
+    
+    <!-- Página de Anterior edición -->
+    <div id="anterior-edicion-page" class="page">
+        <div class="content-page">
+            <h2 class="text-3xl font-bold">Fotos de ediciones anteriores</h2>
+            <p>Aquí se mostrarán las fotos de años pasados.</p>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Espacio para las fotos -->
+                <img src="https://i.imgur.com/sHJB1u4.jpeg" alt="Foto de Navidad 1" class="rounded-lg shadow-md">
+                <img src="https://i.imgur.com/NYnYp4a.jpeg" alt="Foto de Navidad 2" class="rounded-lg shadow-md">
+            </div>
+            <button id="btn-back-1" class="mt-8 px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Volver</button>
+        </div>
+    </div>
+
+    <!-- Página del Menú -->
+    <div id="menu-page" class="page">
+        <div class="content-page">
+            <h2 class="text-3xl font-bold">Menú de Nochebuena y Navidad</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Evento</th>
+                        <th>Plato principal</th>
+                        <th>Postre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Nochebuena</td>
+                        <td>(Ej. Pavo relleno)</td>
+                        <td>(Ej. Tronco de Navidad)</td>
+                    </tr>
+                    <tr>
+                        <td>Navidad</td>
+                        <td>(Ej. Cordero asado)</td>
+                        <td>(Ej. Turrones y polvorones)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <button id="btn-back-2" class="mt-8 px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Volver</button>
+        </div>
+    </div>
+
+    <!-- Página del Programa -->
+    <div id="programa-page" class="page">
+        <div class="content-page">
+            <h2 class="text-3xl font-bold">Programa de Actividades 2024</h2>
+            
+
+Bienvenidos a la apertura oficial de las navidades 2024 mediante la lectura del programa oficial navideño.
+
+Este año, a través de la coparticipación de Villa Rían y Villa Mestre, con todo el cariño y dedicación que hemos puesto, esperamos estar a la altura de un evento, que año tras año se ha superado hasta alcanzar cotas de disfrute difícilmente imaginables. Tras la primera edición en formato valenciano del año pasado, este año esperamos repetir el éxito cosechado durante la última edición.
+
+Dicho lo cual, parece que las navidades han empezado un día antes de lo estipulado, llegando la familia catalana el día 22 a tierras valencianas. No se sabe demasiado bien a qué responde tal adelanto de las fechas, pero seguro que nos sirve para estar más tiempo en familia
+
+Mientras un servidor escribe este programa, se desconoce la suerte que habremos corrido durante el sorteo de navidad. No os preocupéis, lo importante es que nos habrá tocado el premio del amor de la familia. También es verdad que uno pediría que algún año nos tocara algo de humor y entendimiento del sarcasmo
+
+Como adelantó Candela recientemente mediante la comunicación previa al programa, la navidad iniciará con un aperitivo marca de la casa. Se repartirán papas y cacahuetes por doquier, precediendo una fideuá que seguro nos deja el cuerpo preparado para una siesta de campeonato
+
+Durante la tarde, juegos y otros menesteres para pasar la tarde de la mejor manera, quizá hasta caiga una cocacola, pero nada copioso que pueda interferir en el devenir estomacal de todos los miembros
+
+Por la noche, cena informal, formato “cada uno que se apañe”
+
+Y llega el día 23, la cosa se pone seria. Las chicas se irán a hacer las últimas compras y los chicos a demostrar que un pequeño bache no puede terminar con la ilusión de nadie. La niña Candela, que hace nada estaba gateando por la casa, será la que se quede levantando el pib del pais
+
+Desde el comité de festejos, agradecer su todavía implicación en el menú pese al paso atrás que se decidió dar el año pasado, dando paso a las nuevas generaciones en cuanto a la elaboración del menú se refiere
+
+
+
+Por la noche llegará uno de los momentos más deseados por un servidor, reunión alrededor del fuego, mientras se le transmite al chef anthony cómo tiene que hacer las butifarras. 
+
+Tras la cena, noche de trivial
+
+
+El 24 por la mañana, los golfistas, si han pasado el corte, se dirigirán al segundo de sus recorridos. Se espera que Joan, que pudo haber sido tanto tenista como golfista si le hubiera dedicado tiempo, siga dando el nivel que se espera de él en las grandes citas. No ganará tanto dinero como Rahm, pero con su trabajo como cocinero nos resulta más útil para toda la familia
+
+Para comer, esta vez parece que sí, platito ligerito para preparar el cuerpo para una noche exigente en cuanto a la carga estomacal se refiere
+
+Damos paso a la siesta y la familia se empieza a preparar para la tan ansiada cena. Toda la presión recae sobre los jóvenes. 
+
+Como veis, se trata de un menú repleto de buen producto y sobre todo mucho amor. 
+
+Tras la cena, bebidas espirituosas y algún baile para bajar la cena
+
+Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comité de festejos, desear a todos felices fiestas
+</p>
+            
+            
+            <button id="btn-back-3" class="mt-8 px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Volver</button>
+        </div>
+    </div>
+
+    <!-- Página de Sugerencias -->
+    <div id="Sugerencias-page" class="page">
+        <div class="content-page">
+            <h2 class="text-3xl font-bold">Sugerencias</h2>
+            <p>Escribe aquí tus sugerencias para las celebraciones de Navidad.</p>
+            <label for="user-name" class="text-left w-full mt-4">Tu nombre:</label>
+            <input type="text" id="user-name" placeholder="Tu nombre">
+            <label for="suggestion-box" class="text-left w-full mt-4">Tu sugerencia:</label>
+            <textarea id="suggestion-box" placeholder="Escribe tu sugerencia aquí..."></textarea>
+            <!-- Nuevo botón para generar ideas con Gemini API -->
+            <button id="btn-generate-ideas" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition">Generar Ideas ✨</button>
+            <div id="ideas-output" class="mt-4 text-white text-left"></div>
+            <div class="flex gap-4 mt-8">
+                <button id="btn-submit-suggestion" class="px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Enviar</button>
+                <button id="btn-back-4" class="px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Volver</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nueva página para ver las sugerencias guardadas -->
+    <div id="suggestions-list-page" class="page">
+        <div class="content-page">
+            <h2 class="text-3xl font-bold">Sugerencias guardadas</h2>
+            <p>Aquí se muestran las sugerencias enviadas. Las nuevas sugerencias aparecerán aquí automáticamente.</p>
+            <div id="suggestions-list-container" class="mt-8 text-white">
+                <!-- Aquí se cargarán dinámicamente las sugerencias -->
+                <p>Cargando sugerencias...</p>
+            </div>
+            <button id="btn-back-5" class="mt-8 px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Volver</button>
+        </div>
+    </div>
+
+    <!-- Página de Reservas (Formulario) -->
+    <div id="reservas-page" class="page">
+        <div class="content-page">
+            <h2 class="text-3xl font-bold">Realizar una Reserva</h2>
+            <div class="reservas-form-group">
+                <label for="reserva-nombre">Tu Nombre:</label>
+                <input type="text" id="reserva-nombre" placeholder="Introduce tu nombre">
+            </div>
+            <div class="reservas-form-group">
+                <label for="reserva-noches">Noches:</label>
+                <select id="reserva-noches">
+                    <option value="1">1 Noche</option>
+                    <option value="2">2 Noches</option>
+                    <option value="3">3 Noches</option>
+                </select>
+            </div>
+            <div class="reservas-form-group">
+                <label for="reserva-fecha-llegada">Fecha de llegada:</label>
+                <input type="date" id="reserva-fecha-llegada">
+            </div>
+            <div class="reservas-form-group">
+                <label for="reserva-alojamiento">Alojamiento:</label>
+                <select id="reserva-alojamiento">
+                    <option value="villa-mestre">Villa Mestre</option>
+                    <option value="villa-rian">Villa Rian</option>
+                </select>
+            </div>
+            <div class="flex gap-4 mt-8">
+                <button id="btn-submit-reserva" class="px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Reservar</button>
+                <button id="btn-back-reservas" class="px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Volver</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nueva Página: Mensaje del Chef -->
+    <div id="mensaje-chef-page" class="page">
+        <div class="content-page">
+            <h2 class="text-3xl font-bold">Mensaje Especial del Chef</h2>
+            <p class="text-lg mb-4">¡Un saludo de vuestro chef de Navidad! Quiero compartir con vosotros un mensaje especial sobre la magia de estas fiestas y la pasión que ponemos en cada plato. ¡Que disfruten!</p>
+            <!-- Contenedor para el video -->
+            <div class="flex justify-center items-center w-full video-responsive">
+                <iframe
+                    src="https://www.youtube.com/embed/LppbXfjzbdc"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen
+                ></iframe>
+            </div>
+            <button id="btn-back-chef" class="mt-8 px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Volver</button>
+        </div>
+    </div>
+
+    <!-- Nueva Página: Mensaje de los Anfitriones -->
+    <div id="mensaje-anfitriones-page" class="page">
+        <div class="content-page">
+            <h2 class="text-3xl font-bold">Mensaje de los Anfitriones</h2>
+            <p class="text-lg mb-4">¡Bienvenidos a nuestra celebración navideña! Desde Villa Rían y Villa Mestre, queremos expresar nuestro más sincero agradecimiento por acompañarnos en estas fechas tan especiales. Que la alegría y el amor inunden vuestros hogares. ¡Felices Fiestas!</p>
+            <button id="btn-back-anfitriones" class="mt-8 px-6 py-2 bg-green-800 text-white rounded-lg hover:bg-green-700 transition">Volver</button>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación -->
+    <div id="my-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-message"></h3>
+            <button id="modal-close-button">Cerrar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Importar las librerías de Firebase y Firestore
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Obtener elementos del DOM
+        const canvas = document.getElementById('miCanvas');
+        const ctx = canvas.getContext('2d');
+        const countdownPage = document.getElementById('countdown-page');
+        const anteriorEdicionPage = document.getElementById('anterior-edicion-page');
+        const menuPage = document.getElementById('menu-page');
+        const programaPage = document.getElementById('programa-page');
+        const sugerenciasPage = document.getElementById('Sugerencias-page');
+        const suggestionsListPage = document.getElementById('suggestions-list-page');
+        const reservasPage = document.getElementById('reservas-page');
+        const mensajeChefPage = document.getElementById('mensaje-chef-page');
+        const mensajeAnfitrionesPage = document.getElementById('mensaje-anfitriones-page'); // Nueva página de anfitriones
+        const allPages = [countdownPage, anteriorEdicionPage, menuPage, programaPage, sugerenciasPage, suggestionsListPage, reservasPage, mensajeChefPage, mensajeAnfitrionesPage]; // Actualizar la lista de páginas
+        const devButtonContainer = document.getElementById('dev-button-container-child');
+        const loadingModal = document.getElementById('loading-modal');
+        const loadingCountdown = document.getElementById('loading-countdown');
+
+        // Elementos del menú hamburguesa
+        const hamburgerMenu = document.getElementById('hamburger-menu');
+        const menuOverlay = document.getElementById('menu-overlay');
+        const closeMenuBtn = document.getElementById('close-menu-btn');
+
+        // Obtener elementos de la página de sugerencias y del modal
+        const suggestionBox = document.getElementById('suggestion-box');
+        const nameInput = document.getElementById('user-name');
+        const submitButton = document.getElementById('btn-submit-suggestion');
+        const modal = document.getElementById('my-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseButton = document.getElementById('modal-close-button');
+        const suggestionsListContainer = document.getElementById('suggestions-list-container');
+        // Nuevos elementos para la funcionalidad de Gemini API
+        const generateIdeasButton = document.getElementById('btn-generate-ideas');
+        const ideasOutputDiv = document.getElementById('ideas-output');
+
+
+        // Elementos del formulario de reservas
+        const reservaNombreInput = document.getElementById('reserva-nombre');
+        const reservaNochesSelect = document.getElementById('reserva-noches');
+        // FIX: Corregido el error de sintaxis en la inicialización de reservaFechaLlegadaInput
+        const reservaFechaLlegadaInput = document.getElementById('reserva-fecha-llegada');
+        const reservaAlojamientoSelect = document.getElementById('reserva-alojamiento');
+        const submitReservaButton = document.getElementById('btn-submit-reserva');
+
+        // Contenedor para los iconos de flash de Navidad
+        const christmasFlashIconContainer = document.getElementById('christmas-flash-icon-container');
+
+        // Variables de Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // FIX: Corregido el error de referencia en la inicialización de initialAuthToken
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        let db;
+        let auth;
+        let userId = 'anon-user';
+
+        // Array de URLs de imágenes JPG navideñas
+        // Puedes reemplazar estas URLs por las de tus propias imágenes JPG
+        const christmasJpgIcons = [
+            "https://placehold.co/200x200/FFDAB9/006400?text=Estrella", // Estrella
+            "https://placehold.co/200x200/FFDAB9/006400?text=Copo",     // Copo de nieve
+            "https://placehold.co/200x200/FFDAB9/006400?text=Regalo",   // Regalo
+            "https://placehold.co/200x200/FFDAB9/006400?text=Arbol",    // Árbol de Navidad
+            "https://placehold.co/200x200/FFDAB9/006400?text=Campana",   // Campana
+            "https://placehold.co/200x200/FFB6C1/8B0000?text=Nueva+Imagen" // ¡Nueva imagen de ejemplo!
+        ];
+
+        /**
+         * Muestra el modal con un mensaje específico.
+         * @param {string} message - El mensaje a mostrar en el modal.
+         */
+        function showModal(message) {
+            modalMessage.innerText = message;
+            modal.style.display = 'flex';
+        }
+
+        /**
+         * Oculta el modal.
+         */
+        function hideModal() {
+            modal.style.display = 'none';
+        }
+
+        /**
+         * Inicializa Firebase y autentica al usuario.
+         */
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Usar onAuthStateChanged para gestionar el estado de autenticación
+                return new Promise((resolve) => {
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                        } else {
+                            // Usar la variable global initialAuthToken que ya está correctamente inicializada
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                            userId = auth.currentUser.uid;
+                        }
+                        resolve();
+                    });
+                });
+
+            } catch (error) {
+                console.error("Error al inicializar Firebase:", error);
+                showModal("Error: No se pudo conectar con la base de datos.");
+            }
+        }
+
+        /**
+         * Listener en tiempo real para las sugerencias.
+         */
+        function setupSuggestionsListener() {
+            if (!db || !userId) {
+                console.error("Firebase o userId no están disponibles.");
+                return;
+            }
+            // Ruta de la colección de sugerencias para este usuario
+            const suggestionsPath = `artifacts/${appId}/users/${userId}/suggestions`;
+            const suggestionsCollection = collection(db, suggestionsPath);
+
+            onSnapshot(suggestionsCollection, (snapshot) => {
+                const suggestions = [];
+                snapshot.forEach(doc => {
+                    suggestions.push({ id: doc.id, ...doc.data() });
+                });
+                renderSuggestions(suggestions);
+            }, (error) => {
+                console.error("Error al escuchar las sugerencias:", error);
+                showModal("Error al cargar las sugerencias.");
+            });
+        }
+
+        /**
+         * Renderiza las sugerencias en la nueva página.
+         * @param {Array<Object>} suggestions - Lista de objetos de sugerencias.
+         */
+        function renderSuggestions(suggestions) {
+            suggestionsListContainer.innerHTML = '';
+            if (suggestions.length === 0) {
+                suggestionsListContainer.innerHTML = '<p>Aún no hay sugerencias.</p>';
+                return;
+            }
+            
+            // Ordenar las sugerencias por fecha (la más reciente primero)
+            suggestions.sort((a, b) => {
+                if (!a.timestamp || !b.timestamp) return 0;
+                return b.timestamp.toMillis() - a.timestamp.toMillis();
+            });
+
+            suggestions.forEach(sug => {
+                const suggestionCard = document.createElement('div');
+                suggestionCard.className = 'suggestion-card';
+                
+                const name = document.createElement('h4');
+                name.innerText = `De: ${sug.name || 'Anónimo'}`;
+
+                const text = document.createElement('p');
+                text.innerText = sug.suggestion;
+
+                const date = document.createElement('small');
+                const dateObj = sug.timestamp ? sug.timestamp.toDate() : new Date();
+                date.innerText = `Fecha: ${dateObj.toLocaleDateString()} a las ${dateObj.toLocaleTimeString()}`;
+
+                suggestionCard.appendChild(name);
+                suggestionCard.appendChild(text);
+                suggestionCard.appendChild(date);
+                suggestionsListContainer.appendChild(suggestionCard);
+            });
+        }
+
+        /**
+         * Muestra una página específica y oculta las demás.
+         * También gestiona la visibilidad del botón "Privado".
+         * @param {string} pageId - El ID de la página a mostrar.
+         */
+        function showPage(pageId) {
+            allPages.forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+            
+            // Ocultar el botón "Privado" en otras páginas
+            devButtonContainer.style.display = (pageId === 'countdown-page') ? 'flex' : 'none';
+
+            // Si volvemos a la página del canvas, necesitamos redibujarlo.
+            if (pageId === 'countdown-page') {
+                ajustarCanvas();
+            }
+            // Cerrar el menú hamburguesa si está abierto
+            menuOverlay.classList.remove('open');
+        }
+
+        /**
+         * Calcula los días restantes para Navidad y dibuja el texto en el canvas.
+         */
+        function dibujarCuentaAtras() {
+            // Limpiar el canvas antes de dibujar
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Calcular los días restantes para Navidad
+            const hoy = new Date();
+            const añoActual = hoy.getFullYear();
+            let navidad = new Date(añoActual, 11, 25); // Diciembre es el mes 11 (0-11)
+
+            // Si ya pasó Navidad este año, calculamos la fecha para el próximo año
+            if (hoy > navidad) {
+                navidad = new Date(añoActual + 1, 11, 25);
+            }
+
+            const diferenciaEnTiempo = navidad.getTime() - hoy.getTime();
+            const diasRestantes = Math.ceil(diferenciaEnTiempo / (1000 * 60 * 60 * 24));
+
+            // Dibujar el texto con colores navideños
+            const texto = `Faltan ${diasRestantes} días para Navidad`;
+            ctx.font = 'bold 2em Arial, sans-serif';
+            ctx.fillStyle = '#006400'; // Color verde de Navidad para el texto
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(texto, canvas.width / 2, canvas.height / 2);
+        }
+
+        /**
+         * Ajusta el tamaño del canvas al tamaño de la ventana y vuelve a dibujar.
+         */
+        function ajustarCanvas() {
+            // El canvas ahora se ajusta al tamaño de su contenedor (main-container)
+            // y el texto se centra dentro del canvas.
+            const parentWidth = canvas.parentElement.clientWidth;
+            const parentHeight = canvas.parentElement.clientHeight;
+            
+            // Mantener una proporción para el canvas si es necesario, o simplemente llenar el espacio
+            // Para este caso, el canvas es flexible, por lo que su tamaño real se determinará por flex-grow
+            // y el espacio disponible.
+            canvas.width = parentWidth - 40; // Restar el padding del main-container
+            canvas.height = (parentHeight - 40) * 0.6; // Asignar un porcentaje de la altura disponible para el canvas
+            
+            // Asegurarse de que el canvas tenga una altura mínima si el contenido es pequeño
+            if (canvas.height < 100) { // Ejemplo de altura mínima
+                canvas.height = 100;
+            }
+
+            dibujarCuentaAtras();
+        }
+
+        // Lógica para el easter egg del botón "Privado"
+        let devClickCount = 0;
+        let lastClickTime = 0;
+        const clickThreshold = 500; // 500 ms entre clics para que se consideren consecutivos
+        const requiredClicks = 5;
+
+        document.getElementById('btn-dev-page').addEventListener('click', () => {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastClickTime < clickThreshold) {
+                devClickCount++;
+            } else {
+                devClickCount = 1;
+            }
+            lastClickTime = currentTime;
+            if (devClickCount >= requiredClicks) {
+                showPage('suggestions-list-page');
+                devClickCount = 0;
+            }
+        });
+
+        // Eventos para el menú hamburguesa
+        hamburgerMenu.addEventListener('click', () => {
+            menuOverlay.classList.add('open');
+        });
+
+        closeMenuBtn.addEventListener('click', () => {
+            menuOverlay.classList.remove('open');
+        });
+
+        // Eventos de los botones de navegación dentro del menú hamburguesa
+        document.getElementById('menu-btn-reservas').addEventListener('click', () => showPage('reservas-page'));
+        document.getElementById('menu-btn-programa-2024').addEventListener('click', () => showPage('programa-page'));
+        document.getElementById('menu-btn-mensaje-chef').addEventListener('click', () => showPage('mensaje-chef-page'));
+        document.getElementById('menu-btn-mensaje-anfitriones').addEventListener('click', () => showPage('mensaje-anfitriones-page'));
+
+
+        // Eventos de los botones de navegación en la página principal
+        document.getElementById('btn-anterior').addEventListener('click', () => showPage('anterior-edicion-page'));
+        document.getElementById('btn-menu').addEventListener('click', () => {
+            console.log("Botón 'Menú' clickeado."); // Mensaje de depuración
+            showPage('menu-page');
+        });
+        document.getElementById('btn-Sugerencias').addEventListener('click', () => showPage('Sugerencias-page'));
+
+
+        // Eventos de los botones de volver (mantienen la misma funcionalidad)
+        document.getElementById('btn-back-1').addEventListener('click', () => showPage('countdown-page'));
+        document.getElementById('btn-back-2').addEventListener('click', () => showPage('countdown-page'));
+        document.getElementById('btn-back-3').addEventListener('click', () => showPage('countdown-page'));
+        document.getElementById('btn-back-4').addEventListener('click', () => showPage('countdown-page'));
+        document.getElementById('btn-back-5').addEventListener('click', () => showPage('countdown-page'));
+        document.getElementById('btn-back-reservas').addEventListener('click', () => showPage('countdown-page'));
+        document.getElementById('btn-back-chef').addEventListener('click', () => showPage('countdown-page'));
+        document.getElementById('btn-back-anfitriones').addEventListener('click', () => showPage('countdown-page'));
+        modalCloseButton.addEventListener('click', hideModal);
+
+        // Evento para enviar sugerencias
+        submitButton.addEventListener('click', async () => {
+            const nameText = nameInput.value.trim();
+            const suggestionText = suggestionBox.value.trim();
+
+            if (!nameText || !suggestionText) {
+                showModal("Por favor, rellena tu nombre y la sugerencia antes de enviarla.");
+                return;
+            }
+
+            try {
+                // Ruta de la colección de sugerencias para este usuario
+                const suggestionsPath = `artifacts/${appId}/users/${userId}/suggestions`;
+                const suggestionsCollection = collection(db, suggestionsPath);
+
+                await addDoc(suggestionsCollection, {
+                    name: nameText,
+                    suggestion: suggestionText,
+                    timestamp: serverTimestamp()
+                });
+                
+                showModal("¡Gracias por tu sugerencia, la hemos recibido!");
+                nameInput.value = '';
+                suggestionBox.value = '';
+            } catch (error) {
+                console.error("Error al guardar la sugerencia:", error);
+                showModal("Ocurrió un error al guardar tu sugerencia. Inténtalo de nuevo más tarde.");
+            }
+        });
+
+        // Evento para enviar reservas
+        submitReservaButton.addEventListener('click', async () => {
+            const nombre = reservaNombreInput.value.trim();
+            const noches = reservaNochesSelect.value;
+            const fechaLlegada = reservaFechaLlegadaInput.value;
+            const alojamiento = reservaAlojamientoSelect.value;
+
+            if (!nombre || !noches || !fechaLlegada || !alojamiento) {
+                showModal("Por favor, rellena todos los campos para realizar la reserva.");
+                return;
+            }
+
+            try {
+                // Ruta de la colección de reservas (puedes ajustar esta ruta si necesitas diferentes colecciones)
+                const reservasPath = `artifacts/${appId}/users/${userId}/reservas`;
+                const reservasCollection = collection(db, reservasPath);
+
+                await addDoc(reservasCollection, {
+                    nombre: nombre,
+                    noches: parseInt(noches),
+                    fechaLlegada: fechaLlegada,
+                    alojamiento: alojamiento,
+                    timestamp: serverTimestamp()
+                });
+
+                showModal(`¡Reserva para ${nombre} en ${alojamiento} completada!`);
+                // Limpiar el formulario
+                reservaNombreInput.value = '';
+                reservaNochesSelect.value = '1';
+                reservaFechaLlegadaInput.value = '';
+                reservaAlojamientoSelect.value = 'villa-mestre';
+            } catch (error) {
+                console.error("Error al guardar la reserva:", error);
+                showModal("Ocurrió un error al guardar tu reserva. Inténtalo de nuevo más tarde.");
+            }
+        });
+
+        /**
+         * Llama a la API de Gemini con reintentos exponenciales.
+         * @param {string} prompt - El texto del prompt para el modelo.
+         * @param {number} maxRetries - Número máximo de reintentos.
+         * @param {number} delay - Retraso inicial en milisegundos.
+         * @returns {Promise<string>} La respuesta del modelo o un mensaje de error.
+         */
+        async function callGeminiApiWithBackoff(prompt, maxRetries = 5, delay = 1000) {
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Canvas proporcionará esto en tiempo de ejecución
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 429 && i < maxRetries - 1) { // Demasiadas solicitudes
+                            console.log(`Límite de tasa alcanzado, reintentando en ${delay / 1000}s...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; // Retroceso exponencial
+                            continue;
+                        }
+                        throw new Error(`Error HTTP! estado: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        console.error("Estructura de respuesta inesperada de la API:", result);
+                        return "No se pudieron generar ideas. Estructura de respuesta inesperada.";
+                    }
+                } catch (error) {
+                    if (i < maxRetries - 1) {
+                        console.error(`Error al obtener datos de la API de Gemini, reintentando (${i + 1}/${maxRetries}):`, error);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    } else {
+                        console.error("Se alcanzó el número máximo de reintentos. Fallo al obtener datos de la API de Gemini:", error);
+                        return "No se pudieron generar ideas. Inténtalo de nuevo más tarde.";
+                    }
+                }
+            }
+            return "No se pudieron generar ideas después de varios intentos.";
+        }
+
+        /**
+         * Muestra una imagen JPG navideña aleatoria por un breve período.
+         */
+        function showRandomChristmasIcon() {
+            if (countdownPage.classList.contains('active')) { // Solo si la página principal está activa
+                const randomIndex = Math.floor(Math.random() * christmasJpgIcons.length);
+                const imageUrl = christmasJpgIcons[randomIndex];
+                const altText = `Icono navideño ${randomIndex + 1}`; // Texto alternativo descriptivo
+
+                // Limpiar el contenedor antes de añadir la nueva imagen
+                christmasFlashIconContainer.innerHTML = ''; 
+
+                const imgElement = document.createElement('img');
+                imgElement.src = imageUrl;
+                imgElement.alt = altText;
+                
+                // Opcional: Manejar errores de carga de la imagen
+                imgElement.onerror = () => {
+                    console.error('Error al cargar la imagen:', imageUrl);
+                    // Podrías poner una imagen de fallback o un mensaje
+                    imgElement.src = "https://placehold.co/200x200/FF0000/FFFFFF?text=Error"; 
+                    imgElement.alt = "Error al cargar la imagen navideña";
+                };
+
+                christmasFlashIconContainer.appendChild(imgElement);
+                christmasFlashIconContainer.style.opacity = '1'; // Mostrar la imagen
+
+                setTimeout(() => {
+                    christmasFlashIconContainer.style.opacity = '0'; // Ocultar la imagen después de 1 segundo (1000ms)
+                }, 1000); // 1000 milisegundos de visibilidad
+            }
+        }
+
+
+        // Inicializar la aplicación al cargar la ventana
+        window.addEventListener('load', async () => {
+            // Se muestra la pantalla de carga inmediatamente
+            loadingModal.style.opacity = '1';
+            
+            // Tiempo total de espera en milisegundos
+            const totalLoadingTime = 4000;
+            let countdown = totalLoadingTime / 1000;
+            
+            // Actualiza el contador cada segundo
+            const countdownInterval = setInterval(() => {
+                loadingCountdown.innerText = countdown;
+                countdown--;
+                if (countdown < 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+
+            // Espera el tiempo total antes de continuar
+            setTimeout(async () => {
+                loadingModal.style.opacity = '0';
+                await initializeFirebase();
+                setupSuggestionsListener();
+                ajustarCanvas();
+                showPage('countdown-page'); // Muestra la página principal
+                // Actualiza el contador cada minuto para mantener la cifra correcta
+                setInterval(dibujarCuentaAtras, 1000 * 60);
+                // Iniciar el efecto de flash de iconos navideños
+                setInterval(showRandomChristmasIcon, 10000); // Cada 10 segundos
+
+                // Oculta completamente el modal de carga después de la transición
+                setTimeout(() => {
+                    loadingModal.style.display = 'none';
+                }, 500); // El tiempo de transición es de 0.5s (500ms)
+            }, totalLoadingTime); 
+        });
+
+        // Evento para el nuevo botón "Generar Ideas"
+        generateIdeasButton.addEventListener('click', async () => {
+            ideasOutputDiv.innerHTML = '<p>Generando ideas... <span class="spinner-small"></span></p>';
+            generateIdeasButton.disabled = true; // Deshabilitar el botón durante la carga
+
+            const prompt = "Genera 3 ideas creativas y originales para mejorar una celebración familiar de Navidad, centrándote en actividades, decoración o comida. Presenta cada idea en una frase corta, enumeradas.";
+            const generatedText = await callGeminiApiWithBackoff(prompt);
+            
+            ideasOutputDiv.innerHTML = `<p><strong>Ideas generadas:</strong></p><p>${generatedText.replace(/\n/g, '<br>')}</p>`;
+            generateIdeasButton.disabled = false; // Habilitar el botón nuevamente
+        });
+        
+    </script>
+</body>
+</html>

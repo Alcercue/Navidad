@@ -45,6 +45,17 @@
             margin-bottom: 20px;
         }
         
+        .spinner-small {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fdf5e6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -463,6 +474,7 @@
         <h2 class="text-2xl">Cargando la Navidad...</h2>
         <!-- Nuevo elemento para el contador -->
         <div id="loading-countdown" class="text-6xl font-bold mt-4"></div>
+        <p id="loading-status" class="mt-4 text-lg">Iniciando conexión segura...</p>
     </div>
 
     <!-- Menú hamburguesa -->
@@ -710,11 +722,12 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
         const suggestionsListPage = document.getElementById('suggestions-list-page');
         const reservasPage = document.getElementById('reservas-page');
         const mensajeChefPage = document.getElementById('mensaje-chef-page');
-        const mensajeAnfitrionesPage = document.getElementById('mensaje-anfitriones-page'); // Nueva página de anfitriones
-        const allPages = [countdownPage, anteriorEdicionPage, menuPage, programaPage, sugerenciasPage, suggestionsListPage, reservasPage, mensajeChefPage, mensajeAnfitrionesPage]; // Actualizar la lista de páginas
+        const mensajeAnfitrionesPage = document.getElementById('mensaje-anfitriones-page');
+        const allPages = [countdownPage, anteriorEdicionPage, menuPage, programaPage, sugerenciasPage, suggestionsListPage, reservasPage, mensajeChefPage, mensajeAnfitrionesPage];
         const devButtonContainer = document.getElementById('dev-button-container-child');
         const loadingModal = document.getElementById('loading-modal');
         const loadingCountdown = document.getElementById('loading-countdown');
+        const loadingStatus = document.getElementById('loading-status'); // Nuevo elemento para el estado
 
         // Elementos del menú hamburguesa
         const hamburgerMenu = document.getElementById('hamburger-menu');
@@ -737,7 +750,6 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
         // Elementos del formulario de reservas
         const reservaNombreInput = document.getElementById('reserva-nombre');
         const reservaNochesSelect = document.getElementById('reserva-noches');
-        // FIX: Corregido el error de sintaxis en la inicialización de reservaFechaLlegadaInput
         const reservaFechaLlegadaInput = document.getElementById('reserva-fecha-llegada');
         const reservaAlojamientoSelect = document.getElementById('reserva-alojamiento');
         const submitReservaButton = document.getElementById('btn-submit-reserva');
@@ -748,21 +760,20 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
         // Variables de Firebase
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        // FIX: Corregido el error de referencia en la inicialización de initialAuthToken
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         let db;
         let auth;
         let userId = 'anon-user';
+        let isAuthReady = false; // <<< CLAVE: Indica si la autenticación ha terminado
 
         // Array de URLs de imágenes JPG navideñas
-        // Puedes reemplazar estas URLs por las de tus propias imágenes JPG
         const christmasJpgIcons = [
-            "https://placehold.co/200x200/FFDAB9/006400?text=Estrella", // Estrella
-            "https://placehold.co/200x200/FFDAB9/006400?text=Copo",     // Copo de nieve
-            "https://placehold.co/200x200/FFDAB9/006400?text=Regalo",   // Regalo
-            "https://placehold.co/200x200/FFDAB9/006400?text=Arbol",    // Árbol de Navidad
-            "https://placehold.co/200x200/FFDAB9/006400?text=Campana",   // Campana
-            "https://placehold.co/200x200/FFB6C1/8B0000?text=Nueva+Imagen" // ¡Nueva imagen de ejemplo!
+            "https://placehold.co/200x200/FFDAB9/006400?text=Estrella",
+            "https://placehold.co/200x200/FFDAB9/006400?text=Copo",
+            "https://placehold.co/200x200/FFDAB9/006400?text=Regalo",
+            "https://placehold.co/200x200/FFDAB9/006400?text=Arbol",
+            "https://placehold.co/200x200/FFDAB9/006400?text=Campana",
+            "https://placehold.co/200x200/FFB6C1/8B0000?text=Nueva+Imagen"
         ];
 
         /**
@@ -783,6 +794,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
 
         /**
          * Inicializa Firebase y autentica al usuario.
+         * Devuelve una promesa que se resuelve cuando el estado de autenticación está listo.
          */
         async function initializeFirebase() {
             try {
@@ -790,27 +802,43 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
+                loadingStatus.innerText = 'Autenticando usuario...';
+
                 // Usar onAuthStateChanged para gestionar el estado de autenticación
                 return new Promise((resolve) => {
-                    onAuthStateChanged(auth, async (user) => {
+                    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                        unsubscribe(); // Dejar de escuchar después de la primera resolución
+
                         if (user) {
                             userId = user.uid;
                         } else {
-                            // Usar la variable global initialAuthToken que ya está correctamente inicializada
-                            if (initialAuthToken) {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } else {
-                                await signInAnonymously(auth);
+                            try {
+                                if (initialAuthToken) {
+                                    await signInWithCustomToken(auth, initialAuthToken);
+                                } else {
+                                    await signInAnonymously(auth);
+                                }
+                                userId = auth.currentUser.uid;
+                            } catch (authError) {
+                                console.error("Error durante la autenticación:", authError);
+                                // Forzamos el userId a anónimo si falla (aunque esto podría causar fallos de seguridad si las reglas son estrictas)
+                                userId = 'auth-failed-' + crypto.randomUUID(); 
                             }
-                            userId = auth.currentUser.uid;
                         }
+                        
+                        isAuthReady = true; // El estado de autenticación ha sido verificado
+                        loadingStatus.innerText = `Conexión lista. ID: ${userId.substring(0, 8)}...`;
                         resolve();
                     });
                 });
 
             } catch (error) {
                 console.error("Error al inicializar Firebase:", error);
+                loadingStatus.innerText = 'Error: No se pudo conectar con Firebase.';
+                // Mostrar el modal de error y luego resolver, permitiendo que la aplicación se cargue, pero sin funcionalidad DB
                 showModal("Error: No se pudo conectar con la base de datos.");
+                isAuthReady = true;
+                return Promise.resolve(); 
             }
         }
 
@@ -818,8 +846,10 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
          * Listener en tiempo real para las sugerencias.
          */
         function setupSuggestionsListener() {
-            if (!db || !userId) {
-                console.error("Firebase o userId no están disponibles.");
+            // Se ejecuta SOLO si isAuthReady es true
+            if (!isAuthReady || !db || !userId) {
+                console.error("Firebase o userId no están disponibles (setupSuggestionsListener).");
+                suggestionsListContainer.innerHTML = '<p>No se pudieron cargar las sugerencias. Intenta recargar la página.</p>';
                 return;
             }
             // Ruta de la colección de sugerencias para este usuario
@@ -834,7 +864,8 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
                 renderSuggestions(suggestions);
             }, (error) => {
                 console.error("Error al escuchar las sugerencias:", error);
-                showModal("Error al cargar las sugerencias.");
+                // No mostramos el modal aquí, ya que el error inicial ya se gestionó con el loading
+                suggestionsListContainer.innerHTML = '<p>Error al cargar las sugerencias. Revisa la consola para más detalles.</p>';
             });
         }
 
@@ -852,7 +883,10 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
             // Ordenar las sugerencias por fecha (la más reciente primero)
             suggestions.sort((a, b) => {
                 if (!a.timestamp || !b.timestamp) return 0;
-                return b.timestamp.toMillis() - a.timestamp.toMillis();
+                // Manejar objetos Timestamp de Firestore
+                const aTime = typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : new Date(a.timestamp).getTime();
+                const bTime = typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : new Date(b.timestamp).getTime();
+                return bTime - aTime;
             });
 
             suggestions.forEach(sug => {
@@ -866,7 +900,12 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
                 text.innerText = sug.suggestion;
 
                 const date = document.createElement('small');
-                const dateObj = sug.timestamp ? sug.timestamp.toDate() : new Date();
+                let dateObj;
+                try {
+                    dateObj = sug.timestamp && typeof sug.timestamp.toDate === 'function' ? sug.timestamp.toDate() : new Date();
+                } catch (e) {
+                    dateObj = new Date();
+                }
                 date.innerText = `Fecha: ${dateObj.toLocaleDateString()} a las ${dateObj.toLocaleTimeString()}`;
 
                 suggestionCard.appendChild(name);
@@ -989,7 +1028,6 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
         // Eventos de los botones de navegación en la página principal
         document.getElementById('btn-anterior').addEventListener('click', () => showPage('anterior-edicion-page'));
         document.getElementById('btn-menu').addEventListener('click', () => {
-            console.log("Botón 'Menú' clickeado."); // Mensaje de depuración
             showPage('menu-page');
         });
         document.getElementById('btn-Sugerencias').addEventListener('click', () => showPage('Sugerencias-page'));
@@ -1008,6 +1046,11 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
 
         // Evento para enviar sugerencias
         submitButton.addEventListener('click', async () => {
+            if (!isAuthReady) {
+                showModal("La aplicación se está inicializando. Espera un momento antes de enviar datos.");
+                return;
+            }
+
             const nameText = nameInput.value.trim();
             const suggestionText = suggestionBox.value.trim();
 
@@ -1038,6 +1081,11 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
 
         // Evento para enviar reservas
         submitReservaButton.addEventListener('click', async () => {
+            if (!isAuthReady) {
+                showModal("La aplicación se está inicializando. Espera un momento antes de enviar datos.");
+                return;
+            }
+            
             const nombre = reservaNombreInput.value.trim();
             const noches = reservaNochesSelect.value;
             const fechaLlegada = reservaFechaLlegadaInput.value;
@@ -1049,7 +1097,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
             }
 
             try {
-                // Ruta de la colección de reservas (puedes ajustar esta ruta si necesitas diferentes colecciones)
+                // Ruta de la colección de reservas
                 const reservasPath = `artifacts/${appId}/users/${userId}/reservas`;
                 const reservasCollection = collection(db, reservasPath);
 
@@ -1096,7 +1144,6 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
 
                     if (!response.ok) {
                         if (response.status === 429 && i < maxRetries - 1) { // Demasiadas solicitudes
-                            console.log(`Límite de tasa alcanzado, reintentando en ${delay / 1000}s...`);
                             await new Promise(resolve => setTimeout(resolve, delay));
                             delay *= 2; // Retroceso exponencial
                             continue;
@@ -1110,17 +1157,14 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
                         result.candidates[0].content.parts.length > 0) {
                         return result.candidates[0].content.parts[0].text;
                     } else {
-                        console.error("Estructura de respuesta inesperada de la API:", result);
                         return "No se pudieron generar ideas. Estructura de respuesta inesperada.";
                     }
                 } catch (error) {
                     if (i < maxRetries - 1) {
-                        console.error(`Error al obtener datos de la API de Gemini, reintentando (${i + 1}/${maxRetries}):`, error);
                         await new Promise(resolve => setTimeout(resolve, delay));
                         delay *= 2;
                     } else {
-                        console.error("Se alcanzó el número máximo de reintentos. Fallo al obtener datos de la API de Gemini:", error);
-                        return "No se pudieron generar ideas. Inténtalo de nuevo más tarde.";
+                        return "No se pudieron generar ideas después de varios intentos.";
                     }
                 }
             }
@@ -1134,7 +1178,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
             if (countdownPage.classList.contains('active')) { // Solo si la página principal está activa
                 const randomIndex = Math.floor(Math.random() * christmasJpgIcons.length);
                 const imageUrl = christmasJpgIcons[randomIndex];
-                const altText = `Icono navideño ${randomIndex + 1}`; // Texto alternativo descriptivo
+                const altText = `Icono navideño ${randomIndex + 1}`;
 
                 // Limpiar el contenedor antes de añadir la nueva imagen
                 christmasFlashIconContainer.innerHTML = ''; 
@@ -1143,10 +1187,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
                 imgElement.src = imageUrl;
                 imgElement.alt = altText;
                 
-                // Opcional: Manejar errores de carga de la imagen
                 imgElement.onerror = () => {
-                    console.error('Error al cargar la imagen:', imageUrl);
-                    // Podrías poner una imagen de fallback o un mensaje
                     imgElement.src = "https://placehold.co/200x200/FF0000/FFFFFF?text=Error"; 
                     imgElement.alt = "Error al cargar la imagen navideña";
                 };
@@ -1179,23 +1220,30 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
                 }
             }, 1000);
 
-            // Espera el tiempo total antes de continuar
-            setTimeout(async () => {
-                loadingModal.style.opacity = '0';
-                await initializeFirebase();
-                setupSuggestionsListener();
-                ajustarCanvas();
-                showPage('countdown-page'); // Muestra la página principal
-                // Actualiza el contador cada minuto para mantener la cifra correcta
-                setInterval(dibujarCuentaAtras, 1000 * 60);
-                // Iniciar el efecto de flash de iconos navideños
-                setInterval(showRandomChristmasIcon, 10000); // Cada 10 segundos
+            // 1. Inicializar Firebase y esperar a que la autenticación esté lista
+            await initializeFirebase();
+            
+            // 2. Esperar el tiempo restante de la simulación de carga
+            const remainingTime = totalLoadingTime - (Date.now() - performance.timing.navigationStart);
+            if (remainingTime > 0) {
+                 await new Promise(resolve => setTimeout(resolve, remainingTime));
+            }
 
-                // Oculta completamente el modal de carga después de la transición
-                setTimeout(() => {
-                    loadingModal.style.display = 'none';
-                }, 500); // El tiempo de transición es de 0.5s (500ms)
-            }, totalLoadingTime); 
+
+            // 3. Finalizar la carga y mostrar la aplicación
+            loadingModal.style.opacity = '0';
+            setupSuggestionsListener();
+            ajustarCanvas();
+            showPage('countdown-page'); // Muestra la página principal
+            // Actualiza el contador cada minuto para mantener la cifra correcta
+            setInterval(dibujarCuentaAtras, 1000 * 60);
+            // Iniciar el efecto de flash de iconos navideños
+            setInterval(showRandomChristmasIcon, 10000); // Cada 10 segundos
+
+            // Oculta completamente el modal de carga después de la transición
+            setTimeout(() => {
+                loadingModal.style.display = 'none';
+            }, 500); // El tiempo de transición es de 0.5s (500ms)
         });
 
         // Evento para el nuevo botón "Generar Ideas"

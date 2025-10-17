@@ -497,7 +497,7 @@
     <!-- Página principal con el contador -->
     <div id="countdown-page" class="page active">
         <div class="main-container">
-            <canvas id="miCanvas"></canvas>
+            <p id="miCanvas"></p>
             <!-- Contenedor para iconos SVG de flash de Navidad -->
             <div id="christmas-flash-icon-container"></div>
             <!-- Contenedor de botones principales, ahora dentro del main-container -->
@@ -986,11 +986,11 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
             const diasRestantes = Math.ceil(diferenciaEnTiempo / (1000 * 60 * 60 * 24));
 
             // Dibujar el texto con colores navideños
-            const texto = `Quedan ${diasRestantes} días<br>para Navidad`;
-            ctx.font = 'bold 30px Arial, sans-serif';
-            ctx.fillStyle = '#006400'; // Color verde de Navidad para el texto
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            const texto = `Quedan ${diasRestantes} días <br> para Navidad`;
+            //ctx.font = 'bold 30px Arial, sans-serif';
+            //ctx.fillStyle = '#006400'; // Color verde de Navidad para el texto
+            //ctx.textAlign = 'center';
+            //ctx.textBaseline = 'middle';
             document.getElementById('miCanvas').innerHTML = texto;
             //ctx.fillText(texto, canvas.width / 2, canvas.height / 2);
         }

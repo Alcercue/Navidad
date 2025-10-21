@@ -966,8 +966,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
         }
 
         /**
-         * Calcula los días restantes para Navidad y dibuja el texto en el canvas
-         * con un salto de línea después de la palabra "días".
+         * Calcula los días restantes para Navidad y dibuja el texto en el canvas.
          */
         function dibujarCuentaAtras() {
             // Limpiar el canvas antes de dibujar
@@ -986,27 +985,14 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
             const diferenciaEnTiempo = navidad.getTime() - hoy.getTime();
             const diasRestantes = Math.ceil(diferenciaEnTiempo / (1000 * 60 * 60 * 24));
 
-            // --- Lógica de dos líneas para el texto ---
-            const linea1 = `Quedan ${diasRestantes} días`;
-            const linea2 = `para Navidad`;
-            
-            // Ajustar tamaño de fuente y estilo
+            // Dibujar el texto con colores navideños
+            const texto = `Quedan ${diasRestantes} días para Navidad`;
             ctx.font = 'bold 30px Arial, sans-serif';
             ctx.fillStyle = '#006400'; // Color verde de Navidad para el texto
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            
-            // Calcular posición vertical. `canvas.height / 2` es el centro.
-            // Necesitamos subir la primera línea y bajar la segunda línea.
-            const lineHeight = 35; // Espacio entre líneas (ajustable)
-            const centerY = canvas.height / 2;
-            const y1 = centerY - (lineHeight / 2); // Posición de la primera línea
-            const y2 = centerY + (lineHeight / 2); // Posición de la segunda línea
-
-            // Dibujar las dos líneas
-            ctx.fillText(linea1, canvas.width / 2, y1);
-            ctx.fillText(linea2, canvas.width / 2, y2);
-            // --- Fin Lógica de dos líneas ---
+            document.getElementById('miCanvas').innerHTML = texto;
+            ctx.fillText(texto, canvas.width / 2, canvas.height / 2);
         }
 
         /**

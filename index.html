@@ -741,7 +741,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
         
         // Obtener elementos del DOM
         const canvas = document.getElementById('miCanvas');
-        //const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d');
         const countdownPage = document.getElementById('countdown-page');
         const anteriorEdicionPage = document.getElementById('anterior-edicion-page');
         const menuPage = document.getElementById('menu-page');
@@ -987,12 +987,12 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
 
             // Dibujar el texto con colores navideños
             const texto = `Quedan ${diasRestantes} días <br> para Navidad`;
-            //ctx.font = 'bold 30px Arial, sans-serif';
-            //ctx.fillStyle = '#006400'; // Color verde de Navidad para el texto
-            //ctx.textAlign = 'center';
-            //ctx.textBaseline = 'middle';
+            ctx.font = 'bold 30px Arial, sans-serif';
+            ctx.fillStyle = '#006400'; // Color verde de Navidad para el texto
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             document.getElementById('miCanvas').innerHTML = texto;
-            //ctx.fillText(texto, canvas.width / 2, canvas.height / 2);
+            ctx.fillText(texto, canvas.width / 2, canvas.height / 2);
         }
 
         /**

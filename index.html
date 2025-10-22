@@ -864,7 +864,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
                 console.error("Error al inicializar Firebase:", error);
                 loadingStatus.innerText = '';
                 // Mostrar el modal de error y luego resolver, permitiendo que la aplicación se cargue, pero sin funcionalidad DB
-                // showModal("Benvingut al Nadal, esperamos pasar unos días en familia y con mucha felicidad");
+                // showModal("Benvingut al Nadal, esperamos pasar unos días en familia y con mucha felicidad"); // <-- Modal de error comentado
                 isAuthReady = true;
                 return Promise.resolve(); 
             }
@@ -966,7 +966,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
         }
 
         /**
-         * Calcula los días restantes para Navidad y dibuja el texto en el canvas.
+         * Calcula los días restantes para Navidad y dibuja el texto en el canvas en dos líneas.
          */
         function dibujarCuentaAtras() {
             // Limpiar el canvas antes de dibujar
@@ -985,14 +985,27 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
             const diferenciaEnTiempo = navidad.getTime() - hoy.getTime();
             const diasRestantes = Math.ceil(diferenciaEnTiempo / (1000 * 60 * 60 * 24));
 
-            // Dibujar el texto con colores navideños
-            const texto = `Quedan ${diasRestantes}\n<br>días para Navidad`;
-            ctx.font = 'bold 30px Arial, sans-serif';
-            ctx.fillStyle = '#006400'; // Color verde de Navidad para el texto
+            // Dibujar el texto en dos líneas
+            const linea1 = `Quedan ${diasRestantes} días`;
+            const linea2 = "para Navidad";
+            
+            // Ajustar el tamaño de la fuente para que se vea bien
+            const fontSize = Math.floor(canvas.height / 5); // Un quinto de la altura del canvas
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            ctx.fillStyle = '#006400'; // Color verde de Navidad
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            document.getElementById('miCanvas').innerHTML = texto;
-            ctx.fillText(texto, canvas.width / 2, canvas.height / 2);
+            
+            // Calcular posiciones
+            const center_x = canvas.width / 2;
+            const center_y = canvas.height / 2;
+            const lineHeight = fontSize * 1.2; // Espacio entre líneas
+            
+            // Dibujar la primera línea
+            ctx.fillText(linea1, center_x, center_y - lineHeight / 2);
+            
+            // Dibujar la segunda línea
+            ctx.fillText(linea2, center_x, center_y + lineHeight / 2);
         }
 
         /**
@@ -1004,15 +1017,13 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
             const parentWidth = canvas.parentElement.clientWidth;
             const parentHeight = canvas.parentElement.clientHeight;
             
-            // Mantener una proporción para el canvas si es necesario, o simplemente llenar el espacio
-            // Para este caso, el canvas es flexible, por lo que su tamaño real se determinará por flex-grow
-            // y el espacio disponible.
+            // Asignar un porcentaje de la altura disponible para el canvas
             canvas.width = parentWidth - 40; // Restar el padding del main-container
-            canvas.height = (parentHeight - 40) * 0.6; // Asignar un porcentaje de la altura disponible para el canvas
+            canvas.height = (parentHeight - 40) * 0.6; 
             
             // Asegurarse de que el canvas tenga una altura mínima si el contenido es pequeño
-            if (canvas.height < 100) { // Ejemplo de altura mínima
-                canvas.height = 100;
+            if (canvas.height < 150) { // Incrementado la altura mínima
+                canvas.height = 150;
             }
 
             dibujarCuentaAtras();
@@ -1280,7 +1291,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
             ideasOutputDiv.innerHTML = '<p>Generando ideas... <span class="spinner-small"></span></p>';
             generateIdeasButton.disabled = true; // Deshabilitar el botón durante la carga
 
-            const prompt = "Genera 3 ideas creativas y originales para mejorar una celebración familiar de Navidad, centrándote en actividades, decoración o comida. Presenta cada idea en una frase corta, enumeradas.";
+            const prompt = "Genera 3 ideas creativas y originales para mejorar una celebración familiar de Navidad, centrándose en actividades, decoración o comida. Presenta cada idea en una frase corta, enumeradas.";
             const generatedText = await callGeminiApiWithBackoff(prompt);
             
             ideasOutputDiv.innerHTML = `<p><strong>Ideas generadas:</strong></p><p>${generatedText.replace(/\n/g, '<br>')}</p>`;

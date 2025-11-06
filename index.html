@@ -992,7 +992,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
 
             // Si ya pasó Navidad este año, calculamos la fecha para el próximo año
             if (hoy > navidad) {
-                navidad = new Date(añoActual + 1, 11, 25);
+                navidad = new Date(añoActual + 1, 11, 24);
             }
 
             const diferenciaEnTiempo = navidad.getTime() - hoy.getTime();
@@ -1000,7 +1000,7 @@ Día 25. despedida de la gente y ya nos vemos el año que viene, y desde el comi
 
             // Dibujar el texto en dos líneas
             const linea1 = `Quedan ${diasRestantes} días`;
-            const linea2 = "para Navidad";
+            const linea2 = "para Nochebuena";
             
             // Ajustar el tamaño de la fuente para que se vea bien
             const fontSize = Math.floor(canvas.height / 6); // Un quinto de la altura del canvas
